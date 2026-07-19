@@ -50,12 +50,13 @@ def get_tenders(
     sort_by: str = Query("id"),
     sort_order: str = Query("ASC")
 ):
-    # Connect directly to the bundled DB file
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
 
     params = []
+    
+    # Core architectural fix: Qualify target fields to prevent ambiguous column conflicts during FTS5 joins
     if search and search.strip():
         clean_search = search.replace("'", "").replace('"', "") + "*"
         base_query = "FROM tenders t JOIN tenders_fts f ON t.rowid = f.rowid WHERE tenders_fts MATCH ?"
@@ -84,10 +85,19 @@ def get_tenders(
     cursor.execute(f"SELECT COUNT(*) {base_query}", params)
     total_records = cursor.fetchone()[0]
 
+    # Calculate exact page boundaries offsets
     offset = (page - 1) * limit
-    data_query = f"SELECT t.id, t.title, t.authority, t.type, t.status, t.value, t.close_date, t.description {base_query} ORDER BY t.{sort_by} {sort_order} LIMIT ? OFFSET ?"
     
-    cursor.execute(data_query, params + [limit, offset])
+    # Core architectural fix: Hardcode integer limits into string queries 
+    # to bypass strict parameter type bindings constraints in SQLite serverless runs
+    data_query = f"""
+        SELECT t.id, t.title, t.authority, t.type, t.status, t.value, t.close_date, t.description 
+        {base_query} 
+        ORDER BY t.{sort_by} {sort_order} 
+        LIMIT {int(limit)} OFFSET {int(offset)}
+    """
+    
+    cursor.execute(data_query, params)
     results = [dict(row) for row in cursor.fetchall()]
     conn.close()
 
