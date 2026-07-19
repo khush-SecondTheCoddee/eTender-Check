@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-900 text-slate-100">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Procurement Archival Engine</title>
+    <!-- Tailwind Engine CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <!-- Lucide Asset Vector Library CDN -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="h-full flex flex-col font-sans selection:bg-indigo-500 selection:text-white antialiased">
+
+    <!-- Top Navigation Workspace Grid Frame -->
+    <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur-md sticky top-0 z-40 px-6 py-4 flex items-center justify-between">
+        <div class="flex items-center space-x-3">
+            <div class="bg-indigo-600 p-2 rounded-lg text-white shadow-lg shadow-indigo-600/20">
+                <i data-lucide="database" class="w-5 h-5"></i>
+            </div>
+            <div>
+                <h1 class="text-lg font-bold tracking-tight text-white flex items-center gap-2">
+                    ARCHIVAL DASHBOARD <span class="text-xs bg-indigo-500/10 text-indigo-400 font-mono px-2 py-0.5 rounded-full border border-indigo-500/20">Edge Sync</span>
+                </h1>
+                <p class="text-xs text-slate-400 font-mono">Modernized Interface Module Layer</p>
+            </div>
+        </div>
+        <div class="flex items-center space-x-4">
+            <div id="connectionStatus" class="flex items-center space-x-2 text-xs font-mono text-emerald-400 bg-emerald-500/10 px-3 py-1.5 rounded-md border border-emerald-500/20">
+                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                <span>EDGE INFRASTRUCTURE CONNECTED</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Workspace Shell Frame Layout -->
+    <main class="flex-1 flex flex-col p-6 max-w-7xl w-full mx-auto space-y-6 overflow-y-auto">
+        
+        <!-- Global Query Control Cluster Deck -->
+        <div class="bg-slate-800/50 border border-slate-800 rounded-xl p-4 shadow-xl backdrop-blur-sm space-y-4">
+            <div class="flex flex-col md:flex-row gap-3">
+                <!-- Real-Time Debounced Global Search Bar -->
+                <div class="relative flex-1">
+                    <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                        <i data-lucide="search" class="w-4 h-4"></i>
+                    </span>
+                    <input type="text" id="globalSearch" placeholder="Execute fast query indexing across target records parameters..." 
+                        class="w-full bg-slate-900 border border-slate-700 rounded-lg pl-10 pr-4 py-2.5 text-sm text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all font-mono" />
+                </div>
+                <!-- Toggle Filter Trigger Control Mechanism -->
+                <button onclick="toggleFilterPanel()" class="flex items-center justify-center space-x-2 bg-slate-700 hover:bg-slate-600 border border-slate-600 px-4 py-2.5 rounded-lg text-sm font-medium text-slate-200 transition-colors cursor-pointer select-none">
+                    <i data-lucide="sliders-horizontal" class="w-4 h-4"></i>
+                    <span>Advanced Filters</span>
+                </button>
+            </div>
+
+            <!-- Advanced Filters Panel Layer -->
+            <div id="filterPanel" class="hidden grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 pt-4 border-t border-slate-700/50">
+                <div>
+                    <label class="block text-xs font-mono font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Organization Type</label>
+                    <select id="filterType" onchange="triggerFetch()" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs font-mono text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                        <option value="">ALL CLASSIFICATIONS</option>
+                        <option value="Works">Works</option>
+                        <option value="Services">Services</option>
+                        <option value="Supplies">Supplies</option>
+                        <option value="Consultancy">Consultancy</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-mono font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Active/Awarded Status</label>
+                    <select id="filterStatus" onchange="triggerFetch()" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs font-mono text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                        <option value="">ALL STATUS PROFILES</option>
+                        <option value="Active">Active</option>
+                        <option value="Awarded">Awarded</option>
+                        <option value="Under Evaluation">Under Evaluation</option>
+                        <option value="Archived">Archived</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-mono font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Value Floor (Min USD)</label>
+                    <input type="number" id="filterMinVal" oninput="debouncedFetch()" placeholder="Min ($)" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs font-mono text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500" />
+                </div>
+                <div>
+                    <label class="block text-xs font-mono font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Value Ceiling (Max USD)</label>
+                    <input type="number" id="filterMaxVal" oninput="debouncedFetch()" placeholder="Max ($)" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs font-mono text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500" />
+                </div>
+            </div>
+        </div>
+
+        <!-- Error Notification Banner Interface Component -->
+        <div id="errorBanner" class="hidden bg-rose-500/10 border border-rose-500/20 rounded-xl p-4 flex items-start space-x-3 text-rose-400">
+            <i data-lucide="alert-octagon" class="w-5 h-5 shrink-0 mt-0.5"></i>
+            <div class="flex-1">
+                <h4 class="text-sm font-semibold tracking-wide">Archival Node Unreachable Alert</h4>
+                <p class="text-xs text-rose-400/80 mt-1 font-mono" id="errorMessageText">The core API data routing pipeline returned a network error status.</p>
+            </div>
+        </div>
+
+        <!-- Data Table Visual Engine Layout Shell -->
+        <div class="flex-1 bg-slate-800/30 border border-slate-800 rounded-xl shadow-2xl overflow-hidden flex flex-col">
+            <div class="flex-1 overflow-auto relative">
+                <!-- Standard Desktop Layout Array Matrix View -->
+                <table class="w-full text-left border-collapse hidden md:table">
+                    <thead>
+                        <tr class="bg-slate-800/80 border-b border-slate-700 text-xs font-mono uppercase text-slate-400 sticky top-0 z-10 select-none">
+                            <th class="p-4 font-semibold tracking-wider cursor-pointer hover:text-white" onclick="changeSort('id')">System ID <span id="sort_id"></span></th>
+                            <th class="p-4 font-semibold tracking-wider cursor-pointer hover:text-white" onclick="changeSort('title')">Tender Scope & Specifications <span id="sort_title"></span></th>
+                            <th class="p-4 font-semibold tracking-wider cursor-pointer hover:text-white" onclick="changeSort('authority')">Procuring Authority <span id="sort_authority"></span></th>
+                            <th class="p-4 font-semibold tracking-wider">Classification</th>
+                            <th class="p-4 font-semibold tracking-wider cursor-pointer hover:text-white" onclick="changeSort('status')">State <span id="sort_status"></span></th>
+                            <th class="p-4 font-semibold tracking-wider cursor-pointer hover:text-white text-right" onclick="changeSort('value')">Financial Valuation <span id="sort_value"></span></th>
+                            <th class="p-4 font-semibold tracking-wider text-center">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="desktopTableBody" class="divide-y divide-slate-800 font-sans text-sm text-slate-300"></tbody>
+                </table>
+
+                <!-- High-Density Mobile Card Stack Dynamic Visual Layout Matrix -->
+                <div id="mobileCardContainer" class="block md:hidden p-4 space-y-4 divide-y divide-slate-800/40"></div>
+
+                <!-- Async Operations Table Skeleton Loader Matrix Elements Layout Overlay -->
+                <div id="tableSkeleton" class="hidden absolute inset-0 bg-slate-950/40 backdrop-blur-xs flex flex-col p-4 space-y-4">
+                    <div class="h-10 bg-slate-800 animate-pulse rounded-lg w-full"></div>
+                    <div class="h-12 bg-slate-800/60 animate-pulse rounded-md w-full"></div>
+                    <div class="h-12 bg-slate-800/60 animate-pulse rounded-md w-full"></div>
+                    <div class="h-12 bg-slate-800/60 animate-pulse rounded-md w-full"></div>
+                </div>
+            </div>
+
+            <!-- Pagination State Control Matrix Terminal Footer Deck -->
+            <div class="border-t border-slate-800 bg-slate-900/50 p-4 flex flex-col sm:flex-row items-center justify-between gap-4 select-none">
+                <div class="text-xs font-mono text-slate-400">
+                    Displaying records matrix range <span id="countRange" class="text-slate-200 font-semibold">0-0</span> of <span id="countTotal" class="text-slate-200 font-semibold">0</span> items indexed.
+                </div>
+                <div class="flex items-center space-x-2">
+                    <button onclick="navigatePage(-1)" id="btnPrev" class="px-3 py-1.5 bg-slate-800 border border-slate-700 hover:bg-slate-700 disabled:opacity-40 disabled:hover:bg-slate-800 rounded-lg text-xs font-medium text-slate-300 transition-colors cursor-pointer disabled:cursor-not-allowed">Previous</button>
+                    <div id="pageSelectorContainer" class="flex items-center space-x-1"></div>
+                    <button onclick="navigatePage(1)" id="btnNext" class="px-3 py-1.5 bg-slate-800 border border-slate-700 hover:bg-slate-700 disabled:opacity-40 disabled:hover:bg-slate-800 rounded-lg text-xs font-medium text-slate-300 transition-colors cursor-pointer disabled:cursor-not-allowed">Next</button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Dynamic Scope Presentation Detailed Inspection Structural Modal Window Layout -->
+    <div id="inspectionModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fade-in">
+        <div class="bg-slate-800 border border-slate-700 w-full max-w-2xl rounded-xl shadow-2xl flex flex-col max-h-[85vh] overflow-hidden transform scale-95 transition-transform duration-200">
+            <div class="p-6 border-b border-slate-700 flex items-center justify-between bg-slate-800/50">
+                <div class="space-y-1">
+                    <span id="modalIdTag" class="text-xs font-mono bg-indigo-500/10 text-indigo-400 px-2 py-0.5 rounded border border-indigo-500/20">SYSTEM ID DISPATCH</span>
+                    <h3 id="modalTitle" class="text-base font-bold text-white tracking-tight mt-1">Detailed Document Assessment Matrix</h3>
+                </div>
+                <button onclick="closeModal()" class="text-slate-400 hover:text-white bg-slate-700/50 p-1.5 rounded-lg border border-slate-600/40 transition-colors cursor-pointer">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+            
+            <div class="p-6 overflow-y-auto space-y-6 text-sm">
+                <!-- Analytics Grid Details Panel Segment -->
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 bg-slate-900/40 border border-slate-700/50 p-4 rounded-lg">
+                    <div>
+                        <span class="block text-2xs font-mono text-slate-400 uppercase tracking-wider">Valuation</span>
+                        <span id="modalValue" class="text-sm font-bold text-emerald-400 font-mono mt-0.5 block">$0.00</span>
+                    </div>
+                    <div>
+                        <span class="block text-2xs font-mono text-slate-400 uppercase tracking-wider">Classification</span>
+                        <span id="modalType" class="text-sm font-semibold text-slate-200 mt-0.5 block">N/A</span>
+                    </div>
+                    <div>
+                        <span class="block text-2xs font-mono text-slate-400 uppercase tracking-wider">State Profile</span>
+                        <span id="modalStatus" class="text-sm font-semibold text-slate-200 mt-0.5 block">N/A</span>
+                    </div>
+                    <div>
+                        <span class="block text-2xs font-mono text-slate-400 uppercase tracking-wider">Cutoff Date</span>
+                        <span id="modalCloseDate" class="text-sm font-semibold text-rose-400 font-mono mt-0.5 block">0000-00-00</span>
+                    </div>
+                </div>
+
+                <!-- Descriptive Segment Block Area -->
+                <div class="space-y-2">
+                    <h4 class="text-xs font-mono uppercase tracking-wider text-slate-400 font-semibold flex items-center gap-1.5">
+                        <i data-lucide="file-text" class="w-3.5 h-3.5 text-indigo-400"></i> Scope of Work Statement
+                    </h4>
+                    <p id="modalDescription" class="text-slate-300 leading-relaxed font-sans text-xs bg-slate-900/20 p-3 rounded-lg border border-slate-800"></p>
+                </div>
+
+                <!-- Milestone Sequence Visualizer Matrix Profile Segment -->
+                <div class="space-y-3">
+                    <h4 class="text-xs font-mono uppercase tracking-wider text-slate-400 font-semibold flex items-center gap-1.5">
+                        <i data-lucide="milestone" class="w-3.5 h-3.5 text-indigo-400"></i> Pipeline Target Milestones
+                    </h4>
+                    <div class="relative pl-6 border-l border-slate-700 ml-2 space-y-4">
+                        <div class="relative">
+                            <span class="absolute -left-[30px] top-0.5 w-4 h-4 rounded-full bg-emerald-500 border-4 border-slate-800"></span>
+                            <span class="block text-xs font-semibold text-slate-200">Publication & Archival Injection Sync</span>
+                            <span class="block text-2xs font-mono text-slate-500">Completed Lifecycle Transaction Data Logs Verified</span>
+                        </div>
+                        <div class="relative">
+                            <span class="absolute -left-[30px] top-0.5 w-4 h-4 rounded-full bg-indigo-500 border-4 border-slate-800 animate-pulse"></span>
+                            <span class="block text-xs font-semibold text-slate-200">Evaluation Phase Assessment Target Range</span>
+                            <span class="block text-2xs font-mono text-slate-400" id="modalMilestoneEvalDate">Estimated Threshold Data Profile</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="p-4 bg-slate-900/60 border-t border-slate-700/50 flex items-center justify-between">
+                <button id="modalExportBtn" class="flex items-center space-x-2 bg-indigo-600 hover:bg-indigo-500 border border-indigo-500/30 px-4 py-2 rounded-lg text-xs font-medium text-white shadow-lg shadow-indigo-600/10 transition-all cursor-pointer">
+                    <i data-lucide="download" class="w-3.5 h-3.5"></i>
+                    <span>Export Structural JSON Raw Metadata</span>
+                </button>
+                <button onclick="closeModal()" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg text-xs font-medium text-slate-300 transition-colors cursor-pointer border border-slate-600/50">Close Inspection</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Interface Runtime Architecture Control Scripts Logic Block -->
+    <script>
+        // Dynamically deduce routing addresses relative to deployment parameters context
+        const API_BASE = window.location.origin + "/api/tenders";
+        
+        let state = {
+            results: [], total: 0, page: 1, limit: 15,
+            search: "", type: "", status: "", min_value: "", max_value: "",
+            sort_by: "id", sort_order: "ASC"
+        };
+        let debounceTimer;
+
+        document.addEventListener("DOMContentLoaded", () => {
+            lucide.createIcons();
+            setupSearchEvent();
+            triggerFetch();
+        });
+
+        function setupSearchEvent() {
+            document.getElementById("globalSearch").addEventListener("input", (e) => {
+                state.search = e.target.value;
+                state.page = 1;
+                debouncedFetch();
+            });
+        }
+
+        function debouncedFetch() {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(() => {
+                state.min_value = document.getElementById("filterMinVal").value;
+                state.max_value = document.getElementById("filterMaxVal").value;
+                triggerFetch();
+            }, 300);
+        }
+
+        function toggleFilterPanel() {
+            document.getElementById("filterPanel").classList.toggle("hidden");
+        }
+
+        function changeSort(field) {
+            if (state.sort_by === field) {
+                state.sort_order = state.sort_order === "ASC" ? "DESC" : "ASC";
+            } else {
+                state.sort_by = field;
+                state.sort_order = "ASC";
+            }
+            triggerFetch();
+        }
+
+        function navigatePage(direction) {
+            const totalPages = Math.ceil(state.total / state.limit);
+            const targetPage = state.page + direction;
+            if (targetPage >= 1 && targetPage <= totalPages) {
+                state.page = targetPage;
+                triggerFetch();
+            }
+        }
+
+        function setTargetDiscretePage(pageIndex) {
+            if(pageIndex !== state.page) {
+                state.page = pageIndex;
+                triggerFetch();
+            }
+        }
+
+        async function triggerFetch() {
+            showLoader(true);
+            hideError();
+
+            const urlParams = new URLSearchParams();
+            urlParams.append("page", state.page);
+            urlParams.append("limit", state.limit);
+            urlParams.append("sort_by", state.sort_by);
+            urlParams.append("sort_order", state.sort_order);
+
+            state.type = document.getElementById("filterType").value;
+            state.status = document.getElementById("filterStatus").value;
+
+            if (state.search.trim()) urlParams.append("search", state.search.trim());
+            if (state.type) urlParams.append("type", state.type);
+            if (state.status) urlParams.append("status", state.status);
+            if (state.min_value) urlParams.append("min_value", state.min_value);
+            if (state.max_value) urlParams.append("max_value", state.max_value);
+
+            try {
+                const response = await fetch(`${API_BASE}?${urlParams.toString()}`);
+                if (!response.ok) throw new Error(`Network fault status payload: ${response.status}`);
+                
+                const data = await response.json();
+                state.results = data.results;
+                state.total = data.total;
+                
+                renderDataInterface();
+                updateStatusDisplay(true);
+            } catch (err) {
+                console.error(err);
+                showError("Core system database or server cluster network error encountered.");
+                updateStatusDisplay(false);
+            } finally {
+                showLoader(false);
+            }
+        }
+
+        function showLoader(isVisible) {
+            const skeleton = document.getElementById("tableSkeleton");
+            if (isVisible) skeleton.classList.remove("hidden");
+            else skeleton.classList.add("hidden");
+        }
+
+        function showError(msg) {
+            const banner = document.getElementById("errorBanner");
+            document.getElementById("errorMessageText").textContent = msg;
+            banner.classList.remove("hidden");
+        }
+
+        function hideError() {
+            document.getElementById("errorBanner").classList.add("hidden");
+        }
+
+        function updateStatusDisplay(isOnline) {
+            const badge = document.getElementById("connectionStatus");
+            if (isOnline) {
+                badge.className = "flex items-center space-x-2 text-xs font-mono text-emerald-400 bg-emerald-500/10 px-3 py-1.5 rounded-md border border-emerald-500/20";
+                badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span><span>EDGE SYSTEM LINK STABLE</span>`;
+            } else {
+                badge.className = "flex items-center space-x-2 text-xs font-mono text-rose-400 bg-rose-500/10 px-3 py-1.5 rounded-md border border-rose-500/20";
+                badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-rose-500 animate-ping"></span><span>SERVER ARCHITECTURE OFFLINE</span>`;
+            }
+        }
+
+        function formatCurrency(val) {
+            return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(val);
+        }
+
+        function getStatusStyles(status) {
+            switch(status) {
+                case 'Active': return 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20';
+                case 'Awarded': return 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20';
+                case 'Under Evaluation': return 'bg-amber-500/10 text-amber-400 border border-amber-500/20';
+                default: return 'bg-slate-500/10 text-slate-400 border border-slate-700';
+            }
+        }
+
+        function renderDataInterface() {
+            const desktopContainer = document.getElementById("desktopTableBody");
+            const mobileContainer = document.getElementById("mobileCardContainer");
+            
+            desktopContainer.innerHTML = "";
+            mobileContainer.innerHTML = "";
+
+            const sortFields = ['id', 'title', 'authority', 'status', 'value'];
+            sortFields.forEach(field => {
+                const node = document.getElementById(`sort_${field}`);
+                if(node) {
+                    if(state.sort_by === field) {
+                        node.innerHTML = state.sort_order === "ASC" ? "▲" : "▼";
+                        node.className = "text-2xs text-indigo-400 ml-1";
+                    } else {
+                        node.innerHTML = "";
+                    }
+                }
+            });
+
+            if (state.results.length === 0) {
+                desktopContainer.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-xs font-mono text-slate-500">Zero elements matching queries parameters found inside edge repository indexes.</td></tr>`;
+                mobileContainer.innerHTML = `<div class="p-6 text-center text-xs font-mono text-slate-500">Zero elements match vector query constraints.</div>`;
+                updatePaginationControls();
+                return;
+            }
+
+            state.results.forEach((item) => {
+                const tr = document.createElement("tr");
+                tr.className = "hover:bg-slate-800/40 transition-colors border-b border-slate-800/60 font-mono text-xs";
+                tr.innerHTML = `
+                    <td class="p-4 font-semibold text-slate-400 tracking-wider">${item.id}</td>
+                    <td class="p-4 font-sans max-w-sm truncate text-slate-200 font-medium">${item.title}</td>
+                    <td class="p-4 font-sans text-slate-300 max-w-xs truncate">${item.authority}</td>
+                    <td class="p-4 text-slate-400">${item.type}</td>
+                    <td class="p-4">
+                        <span class="px-2 py-0.5 rounded-full text-2xs font-semibold tracking-wide ${getStatusStyles(item.status)}">${item.status.toUpperCase()}</span>
+                    </td>
+                    <td class="p-4 text-right font-bold text-slate-100">${formatCurrency(item.value)}</td>
+                    <td class="p-4 text-center">
+                        <button onclick="inspectRecord('${item.id}')" class="px-2.5 py-1 bg-slate-700 text-slate-200 hover:text-white hover:bg-indigo-600 border border-slate-600 hover:border-indigo-500 rounded transition-all cursor-pointer font-sans font-medium text-2xs">Inspect</button>
+                    </td>
+                `;
+                desktopContainer.appendChild(tr);
+
+                const card = document.createElement("div");
+                card.className = "p-4 space-y-3 bg-slate-800/20 border border-slate-800/80 rounded-lg pt-4";
+                card.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-mono font-bold text-slate-400">${item.id}</span>
+                        <span class="px-2 py-0.5 rounded-full text-3xs font-semibold tracking-wide ${getStatusStyles(item.status)}">${item.status.toUpperCase()}</span>
+                    </div>
+                    <h4 class="text-xs font-semibold text-slate-200 font-sans line-clamp-2">${item.title}</h4>
+                    <div class="grid grid-cols-2 gap-2 pt-2 border-t border-slate-800/60 font-mono text-3xs text-slate-400">
+                        <div><span class="block text-slate-500 uppercase">Valuation</span><span class="text-slate-200 font-bold">${formatCurrency(item.value)}</span></div>
+                        <div><span class="block text-slate-500 uppercase">Classification</span><span class="text-slate-300">${item.type}</span></div>
+                    </div>
+                    <div class="pt-1 flex items-center justify-between">
+                        <span class="text-3xs font-mono text-slate-500">${item.authority}</span>
+                        <button onclick="inspectRecord('${item.id}')" class="px-3 py-1 bg-slate-700 hover:bg-indigo-600 border border-slate-600 rounded text-3xs font-medium text-slate-200 transition-colors cursor-pointer">Inspect</button>
+                    </div>
+                `;
+                mobileContainer.appendChild(card);
+            });
+
+            updatePaginationControls();
+            lucide.createIcons();
+        }
+
+        function updatePaginationControls() {
+            const totalPages = Math.ceil(state.total / state.limit) || 1;
+            document.getElementById("countTotal").textContent = state.total;
+            
+            const startRange = state.total === 0 ? 0 : (state.page - 1) * state.limit + 1;
+            const endRange = Math.min(state.page * state.limit, state.total);
+            document.getElementById("countRange").textContent = `${startRange}-${endRange}`;
+
+            document.getElementById("btnPrev").disabled = state.page === 1;
+            document.getElementById("btnNext").disabled = state.page === totalPages;
+
+            const pagesContainer = document.getElementById("pageSelectorContainer");
+            pagesContainer.innerHTML = "";
+
+            let startPage = Math.max(1, state.page - 1);
+            let endPage = Math.min(totalPages, startPage + 2);
+            if (endPage - startPage < 2) startPage = Math.max(1, endPage - 2);
+
+            for (let p = startPage; p <= endPage; p++) {
+                const btn = document.createElement("button");
+                btn.textContent = p;
+                btn.onclick = () => setTargetDiscretePage(p);
+                btn.className = `px-2.5 py-1 text-xs font-mono rounded-md transition-all cursor-pointer ${p === state.page ? 'bg-indigo-600 text-white font-bold border border-indigo-500 shadow-md shadow-indigo-600/10' : 'bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-400'}`;
+                pagesContainer.appendChild(btn);
+            }
+        }
+
+        function inspectRecord(itemId) {
+            const record = state.results.find(r => r.id === itemId);
+            if (!record) return;
+
+            document.getElementById("modalIdTag").textContent = record.id;
+            document.getElementById("modalTitle").textContent = record.title;
+            document.getElementById("modalValue").textContent = formatCurrency(record.value);
+            document.getElementById("modalType").textContent = record.type;
+            document.getElementById("modalStatus").textContent = record.status.toUpperCase();
+            document.getElementById("modalCloseDate").textContent = record.close_date;
+            document.getElementById("modalDescription").textContent = record.description;
+            
+            const targetEvalDate = new Date(record.close_date);
+            targetEvalDate.setDate(targetEvalDate.getDate() + 45);
+            document.getElementById("modalMilestoneEvalDate").textContent = `Estimated completion evaluation verification parameters: ${targetEvalDate.toISOString().split('T')[0]}`;
+
+            document.getElementById("modalExportBtn").onclick = () => {
+                const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(record, null, 2));
+                const dlAnchor = document.createElement('a');
+                dlAnchor.setAttribute("href", dataStr);
+                dlAnchor.setAttribute("download", `EXPORT_METADATA_${record.id}.json`);
+                document.body.appendChild(dlAnchor);
+                dlAnchor.click();
+                dlAnchor.remove();
+            };
+
+            document.getElementById("inspectionModal").classList.remove("hidden");
+            document.body.classList.add("overflow-hidden");
+            lucide.createIcons();
+        }
+
+        function closeModal() {
+            document.getElementById("inspectionModal").classList.add("hidden");
+            document.body.classList.remove("overflow-hidden");
+        }
+    </script>
+</body>
+</html>
