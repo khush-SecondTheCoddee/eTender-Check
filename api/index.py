@@ -1,15 +1,12 @@
 import os
 import sqlite3
 from typing import Optional, List
-from fastapi import FastAPI, Query
+from fastapi import FastAPI, Query, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-# Remove root_path to avoid proxy double-stripping conflicts
-app = FastAPI(
-    docs_url="/api/docs", 
-    openapi_url="/api/openapi.json"
-)
+# Initialize a clean app instance with zero strict routing rules
+app = FastAPI(docs_url=None, openapi_url=None)
 
 app.add_middleware(
     CORSMiddleware,
@@ -37,10 +34,10 @@ class PaginatedTenderResponse(BaseModel):
     limit: int
     results: List[TenderResponse]
 
-# Dual-Routing Strategy: Catches both path variations to prevent any proxy mismatches
-@app.get("/tenders", response_model=PaginatedTenderResponse)
-@app.get("/api/tenders", response_model=PaginatedTenderResponse)
-def get_tenders(
+# The Catch-All Wildcard Node: Intercepts absolutely any path Vercel forwards
+@app.get("/{path:path}", response_model=PaginatedTenderResponse)
+def catch_all_tenders(
+    path: str,
     page: int = Query(1, ge=1),
     limit: int = Query(15, ge=1, le=100),
     search: Optional[str] = Query(None),
@@ -51,6 +48,11 @@ def get_tenders(
     sort_by: str = Query("id"),
     sort_order: str = Query("ASC")
 ):
+    # Security/Routing check: Ensure the request is targetting our archival data bounds
+    # This allows it to work whether Vercel passes "/tenders", "/api/tenders", or "/api/index.py"
+    if "tenders" not in path.lower() and path != "":
+        raise HTTPException(status_code=404, detail="Resource path not found in archival context.")
+
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
