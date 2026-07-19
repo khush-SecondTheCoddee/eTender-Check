@@ -5,7 +5,11 @@ from fastapi import FastAPI, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-app = FastAPI(docs_url="/api/docs", openapi_url="/api/openapi.json")
+app = FastAPI(
+    root_path="/api",
+    docs_url="/docs",
+    openapi_url="/openapi.json"
+)
 
 app.add_middleware(
     CORSMiddleware,
