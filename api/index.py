@@ -34,7 +34,7 @@ class PaginatedTenderResponse(BaseModel):
     limit: int
     results: List[TenderResponse]
 
-@app.get("/api/tenders", response_model=PaginatedTenderResponse)
+@app.get("/tenders", response_model=PaginatedTenderResponse)
 def get_tenders(
     page: int = Query(1, ge=1),
     limit: int = Query(15, ge=1, le=100),
